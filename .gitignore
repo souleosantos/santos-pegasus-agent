@@ -28,3 +28,8 @@ chroma_db/
 
 # Arquivos temporários
 *.tmp
+
+echo "# Estrutura de dados" > data/README.md
+echo "# Notebooks do projeto" > notebooks/README.md
+echo "# Código fonte" > src/README.md
+echo "# Testes" > tests/README.md
