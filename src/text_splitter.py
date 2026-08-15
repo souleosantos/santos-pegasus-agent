@@ -10,7 +10,7 @@ DATA_DIR = Path("data/raw")
 
 
 def create_chunks(pdf_path: Path) -> list[Document]:
-    """Extrai o texto de um PDF e divide em chunks com metadados."""
+    """Extrai o texto de um PDF e divide em chunks preservando contexto."""
 
     text = extract_text_from_pdf(pdf_path)
 
@@ -24,7 +24,7 @@ def create_chunks(pdf_path: Path) -> list[Document]:
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
-        chunk_overlap=200,
+        chunk_overlap=250,
         separators=[
             "\n\n",
             "\n",
@@ -39,33 +39,40 @@ def create_chunks(pdf_path: Path) -> list[Document]:
     for chunk_id, chunk in enumerate(chunks):
         chunk.metadata["chunk_id"] = chunk_id
 
+        # Adiciona o nome do documento ao próprio texto.
+        # Isso fornece contexto adicional para o modelo de embedding.
+        chunk.page_content = (
+            f"Documento: {pdf_path.stem}\n\n"
+            f"{chunk.page_content}"
+        )
+
     return chunks
 
 
-def main():
+def load_all_chunks() -> list[Document]:
+    """Carrega e divide todos os PDFs da pasta data/raw."""
+
     pdf_files = list(DATA_DIR.glob("*.pdf"))
 
-    total_chunks = 0
+    all_chunks = []
 
     for pdf_path in pdf_files:
         chunks = create_chunks(pdf_path)
+        all_chunks.extend(chunks)
 
-        print("=" * 80)
-        print(f"Arquivo: {pdf_path.name}")
-        print(f"Chunks gerados: {len(chunks)}")
+    return all_chunks
 
-        print("\nPrimeiro chunk:")
-        print(chunks[0].page_content[:500])
 
-        print("\nMetadados:")
-        print(chunks[0].metadata)
+def main():
+    chunks = load_all_chunks()
 
-        print()
+    print(f"Total de chunks: {len(chunks)}")
 
-        total_chunks += len(chunks)
+    print("\nExemplo de chunk:")
+    print(chunks[0].page_content[:500])
 
-    print("=" * 80)
-    print(f"Total de chunks: {total_chunks}")
+    print("\nMetadados:")
+    print(chunks[0].metadata)
 
 
 if __name__ == "__main__":
